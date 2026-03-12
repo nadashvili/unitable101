@@ -7,14 +7,15 @@ const ASSETS = [
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@700&display=swap'
 ];
 
-// ფაილების ქეშირება ინსტალაციისას
+// ინსტალაცია და ფაილების ქეშირება
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
   );
+  self.skipWaiting(); // აჩქარებს აქტივაციას
 });
 
-// ძველი ქეშის წაშლა განახლებისას
+// ძველი ქეშის წაშლა
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keys) => {
@@ -23,9 +24,10 @@ self.addEventListener('activate', (e) => {
       );
     })
   );
+  return self.clients.claim();
 });
 
-// ფაილების მიწოდება ქეშიდან (Offline რეჟიმი)
+// Offline რეჟიმი
 self.addEventListener('fetch', (e) => {
   e.respondWith(
     caches.match(e.request).then((response) => {
