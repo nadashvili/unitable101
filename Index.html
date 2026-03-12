@@ -2,7 +2,7 @@
 <html lang="ka">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>UniTable • Elvix Development</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#6366f1">
@@ -23,7 +23,7 @@
             --emerald: #10b981;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
         body {
             min-height: 100vh;
@@ -34,6 +34,7 @@
             font-family: 'Inter', sans-serif;
             background: var(--bg);
             background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #030712 100%);
+            overflow-x: hidden;
         }
 
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -82,7 +83,8 @@
             border-radius: 32px;
             padding: 32px;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(4px);
+            backdrop-filter: blur(10px);
+            transition: border-color 0.5s ease;
         }
         .priority-card.live { border-color: var(--emerald); }
 
@@ -96,23 +98,28 @@
             font-weight: 900;
             text-transform: uppercase;
             border-radius: 25px 25px 0 0;
+            transition: background 0.5s ease;
         }
         .badge-top.live { background: var(--emerald); }
+
+        .vax-container {
+            border-right: var(--primary) solid 3px;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
 
         #today-carousel {
             display: flex;
             gap: 16px;
             overflow-x: auto;
             scroll-snap-type: x mandatory;
-            padding: 10px;
-            border-left: var(--primary) solid 3px;
-            border-radius: 10px;
+            padding: 10px 0;
         }
 
         .today-card {
-            scroll-snap-align: center;
+            scroll-snap-align: start;
             flex-shrink: 0;
-            width: 256px;
+            width: 260px;
             background: var(--surface);
             border: 1px solid rgba(51, 65, 85, 0.5);
             border-radius: 20px;
@@ -139,10 +146,10 @@
         .gaps-container {
             max-height: 0;
             overflow: hidden;
-            transition: all 0.5s ease-in-out;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             opacity: 0;
         }
-        .gaps-container.open { max-height: 1000px; opacity: 1; }
+        .gaps-container.open { max-height: 500px; opacity: 1; margin-bottom: 20px; }
 
         .gap-item {
             display: flex;
@@ -151,7 +158,7 @@
             background: rgba(99, 102, 241, 0.05);
             border: 1px dashed var(--primary);
             border-radius: 20px;
-            padding: 20px;
+            padding: 16px 20px;
             margin-bottom: 12px;
         }
 
@@ -175,9 +182,15 @@
             letter-spacing: 0.1em;
         }
         .day-divider::after { content: ""; flex: 1; height: 1px; background: rgba(99, 102, 241, 0.2); }
-        .vax{
-            border-radius: 10px;
-            border-right: var(--primary) solid 3px;
+
+        .status-indicator {
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            padding: 2px 10px;
+            border-radius: 99px;
+            background: rgba(255,255,255,0.05);
+            color: var(--text-sub);
         }
     </style>
 </head>
@@ -206,199 +219,211 @@
     </div>
 
     <div id="gaps-drawer" class="gaps-container">
-        <div id="gaps-slot" style="padding-bottom: 10px;"></div>
+        <div id="gaps-slot"></div>
     </div>
-<div class="vax">
-    
-    <div id="today-carousel" class="no-scrollbar"></div></div> 
-    <br />
+
+    <div class="vax-container">
+        <div id="today-carousel" class="no-scrollbar"></div>
+    </div> 
     
     <div id="timeline-slot"></div>
 </div>
 
 <script>
     const schedule = [
-    // ორშაბათი (Day 1)
-    { day: 1, name: "სტატისტიკა ეკონომიკისა და ბიზნესისთვის 1", type: "ლექცია", start: "09:00", end: "10:50", teacher: "შონია ზაზა", room: "X კორპ / 201" },
-    { day: 1, name: "ფინანსური ინსტიტუტები და ბაზრები", type: "სამუშაო ჯგუფი", start: "13:00", end: "13:50", teacher: "რუფალელი ავთანდილი", room: "X კორპ / 1009" },
-    { day: 1, name: "ფინანსური ინსტიტუტები და ბაზრები", type: "სამუშაო ჯგუფი", start: "14:00", end: "14:50", teacher: "რუფალელი ავთანდილი", room: "X კორპ / 1009" },
-
-    // სამშაბათი (Day 2)
-    { day: 2, name: "მარკეტინგი 1", type: "სამუშაო ჯგუფი", start: "09:00", end: "09:50", teacher: "კოლხიდა მიხეილ", room: "X კორპ / 1106" },
-    { day: 2, name: "მარკეტინგი 1", type: "სამუშაო ჯგუფი", start: "10:00", end: "10:50", teacher: "კოლხიდა მიხეილ", room: "X კორპ / 1106" },
-    { day: 2, name: "ბიზნესის ადმინისტრირების საფუძვლები 2", type: "ლექცია", start: "11:00", end: "11:50", teacher: "ედილაშვილი ქრისტინე", room: "X კორპ / 205" },
-    { day: 2, name: "ბიზნესის სამართალი", type: "ლექცია", start: "14:00", end: "14:50", teacher: "ყიფიანი გიგა", room: "X კორპ / 202" },
-
-    // ოთხშაბათი (Day 3)
-    { day: 3, name: "ინოვაციური მენეჯმენტი", type: "სამუშაო ჯგუფი", start: "17:00", end: "17:50", teacher: "ნიჟარაძე დავით", room: "X კორპ / 1009" },
-    { day: 3, name: "ინოვაციური მენეჯმენტი", type: "სამუშაო ჯგუფი", start: "18:00", end: "18:50", teacher: "ნიჟარაძე დავით", room: "X კორპ / 1009" },
-
-    // ხუთშაბათი (Day 4)
-    { day: 4, name: "ბიზნესის ადმინისტრირების საფუძვლები 2", type: "სამუშაო ჯგუფი", start: "13:00", end: "14:50", teacher: "მჭედლიშვილი თეიმურაზ", room: "X კორპ / 603" },
-
-    // პარასკევი (Day 5)
-    { day: 5, name: "ინოვაციური მენეჯმენტი", type: "ლექცია", start: "11:00", end: "11:50", teacher: "ნიჟარაძე დავით", room: "X კორპ / 204" },
-    { day: 5, name: "მარკეტინგი 1", type: "ლექცია", start: "14:00", end: "14:50", teacher: "მღებრიშვილი ხათუნა", room: "X კორპ / 1110" },
-
-    // შაბათი (Day 6)
-    { day: 6, name: "სტატისტიკა ეკონომიკისა და ბიზნესისთვის 1", type: "სამუშაო ჯგუფი", start: "09:00", end: "09:50", teacher: "ოქროშიაშვილი მარიამ", room: "X კორპ / 1117" },
-    { day: 6, name: "სტატისტიკა ეკონომიკისა და ბიზნესისთვის 1", type: "სამუშაო ჯგუფი", start: "10:00", end: "10:50", teacher: "ოქროშიაშვილი მარიამ", room: "X კორპ / 1117" },
-    { day: 6, name: "ბიზნესის სამართალი", type: "სამუშაო ჯგუფი", start: "13:00", end: "14:50", teacher: "წერეთელი მარიამი", room: "X კორპ / 603" },
-    { day: 6, name: "ფინანსური ინსტიტუტები და ბაზრები", type: "ლექცია", start: "16:00", end: "16:50", teacher: "ყურაშვილი ირაკლი", room: "X კორპ / 208" }
-];
-
+        { day: 1, name: "სტატისტიკა ეკონომიკისა და ბიზნესისთვის 1", type: "ლექცია", start: "09:00", end: "10:50", teacher: "შონია ზაზა", room: "X კორპ / 201" },
+        { day: 1, name: "ფინანსური ინსტიტუტები და ბაზრები", type: "სამუშაო ჯგუფი", start: "13:00", end: "13:50", teacher: "რუფალელი ავთანდილი", room: "X კორპ / 1009" },
+        { day: 1, name: "ფინანსური ინსტიტუტები და ბაზრები", type: "სამუშაო ჯგუფი", start: "14:00", end: "14:50", teacher: "რუფალელი ავთანდილი", room: "X კორპ / 1009" },
+        { day: 2, name: "მარკეტინგი 1", type: "სამუშაო ჯგუფი", start: "09:00", end: "09:50", teacher: "კოლხიდა მიხეილ", room: "X კორპ / 1106" },
+        { day: 2, name: "მარკეტინგი 1", type: "სამუშაო ჯგუფი", start: "10:00", end: "10:50", teacher: "კოლხიდა მიხეილ", room: "X კორპ / 1106" },
+        { day: 2, name: "ბიზნესის ადმინისტრირების საფუძვლები 2", type: "ლექცია", start: "11:00", end: "11:50", teacher: "ედილაშვილი ქრისტინე", room: "X კორპ / 205" },
+        { day: 2, name: "ბიზნესის სამართალი", type: "ლექცია", start: "14:00", end: "14:50", teacher: "ყიფიანი გიგა", room: "X კორპ / 202" },
+        { day: 3, name: "ინოვაციური მენეჯმენტი", type: "სამუშაო ჯგუფი", start: "17:00", end: "17:50", teacher: "ნიჟარაძე დავით", room: "X კორპ / 1009" },
+        { day: 3, name: "ინოვაციური მენეჯმენტი", type: "სამუშაო ჯგუფი", start: "18:00", end: "18:50", teacher: "ნიჟარაძე დავით", room: "X კორპ / 1009" },
+        { day: 4, name: "ბიზნესის ადმინისტრირების საფუძვლები 2", type: "სამუშაო ჯგუფი", start: "13:00", end: "14:50", teacher: "მჭედლიშვილი თეიმურაზ", room: "X კორპ / 603" },
+        { day: 5, name: "ინოვაციური მენეჯმენტი", type: "ლექცია", start: "11:00", end: "11:50", teacher: "ნიჟარაძე დავით", room: "X კორპ / 204" },
+        { day: 5, name: "მარკეტინგი 1", type: "ლექცია", start: "14:00", end: "14:50", teacher: "მღებრიშვილი ხათუნა", room: "X კორპ / 1110" },
+        { day: 6, name: "სტატისტიკა ეკონომიკისა და ბიზნესისთვის 1", type: "სამუშაო ჯგუფი", start: "09:00", end: "09:50", teacher: "ოქროშიაშვილი მარიამ", room: "X კორპ / 1117" },
+        { day: 6, name: "სტატისტიკა ეკონომიკისა და ბიზნესისთვის 1", type: "სამუშაო ჯგუფი", start: "10:00", end: "10:50", teacher: "ოქროშიაშვილი მარიამ", room: "X კორპ / 1117" },
+        { day: 6, name: "ბიზნესის სამართალი", type: "სამუშაო ჯგუფი", start: "13:00", end: "14:50", teacher: "წერეთელი მარიამი", room: "X კორპ / 603" },
+        { day: 6, name: "ფინანსური ინსტიტუტები და ბაზრები", type: "ლექცია", start: "16:00", end: "16:50", teacher: "ყურაშვილი ირაკლი", room: "X კორპ / 208" }
+    ];
 
     const geDays = ["კვირა", "ორშაბათი", "სამშაბათი", "ოთხშაბათი", "ხუთშაბათი", "პარასკევი", "შაბათი"];
     let lastRenderedDay = -1;
 
     function timeToMin(t) { const [h, m] = t.split(':').map(Number); return h * 60 + m; }
+    
     function formatTimeRemaining(totalMinutes) {
+        if (totalMinutes <= 0) return "ახლავე";
         const hours = Math.floor(totalMinutes / 60);
         const mins = totalMinutes % 60;
         return hours > 0 ? `${hours}სთ ${mins}წთ` : `${mins} წთ`;
     }
 
+    function renderToday(curDay) {
+        const todayItems = schedule.filter(e => e.day === curDay).sort((a,b) => a.start.localeCompare(b.start));
+        const carousel = document.getElementById('today-carousel');
+        const gapsSlot = document.getElementById('gaps-slot');
+        const toggleBtn = document.getElementById('breaks-toggle');
+
+        if (todayItems.length === 0) {
+            carousel.innerHTML = `<div style="color: var(--text-dim); padding: 20px;">დღეს დასვენებაა! 🎉</div>`;
+            toggleBtn.style.display = "none";
+            return;
+        }
+
+        carousel.innerHTML = todayItems.map(ev => `
+            <div class="today-card" data-start="${ev.start}" data-end="${ev.end}">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <span style="font-family: 'JetBrains Mono'; font-size: 13px; font-weight: bold; color: var(--primary);">${ev.start} - ${ev.end}</span>
+                    <span class="status-indicator">შემდეგი</span>
+                </div>
+                <div style="font-weight: bold; font-size: 16px; color: white; margin-bottom: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${ev.name}</div>
+                <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-dim);">
+                    <i class="material-icons" style="font-size: 14px; color: var(--primary);">place</i>
+                    <span>${ev.room.split(' / ')[1] || ev.room}</span>
+                </div>
+            </div>
+        `).join('');
+
+        let gapsHTML = "";
+        for (let i = 0; i < todayItems.length - 1; i++) {
+            const gap = timeToMin(todayItems[i+1].start) - timeToMin(todayItems[i].end);
+            if (gap >= 5) {
+                gapsHTML += `
+                    <div class="gap-item">
+                        <div style="display: flex; align-items: center; gap: 12px; color: var(--text-dim);">
+                            <i class="material-icons" style="color: var(--primary);">timer</i> 
+                            <span style="font-size: 13px;">შუალედი</span>
+                        </div>
+                        <div style="font-family: 'JetBrains Mono'; font-weight: bold; color: var(--primary); font-size: 15px;">${formatTimeRemaining(gap)}</div>
+                    </div>`;
+            }
+        }
+        gapsSlot.innerHTML = gapsHTML;
+        toggleBtn.style.display = gapsHTML ? "flex" : "none";
+    }
+
+    function renderTimeline() {
+        let html = ""; let cDay = -1;
+        const sorted = [...schedule].sort((a,b) => a.day !== b.day ? a.day - b.day : timeToMin(a.start) - timeToMin(b.start));
+        
+        sorted.forEach(ev => {
+            if (ev.day !== cDay) {
+                if (cDay !== -1) html += `</div>`;
+                html += `<div class="day-divider">${geDays[ev.day]}</div><div>`;
+                cDay = ev.day;
+            }
+            html += `
+                <div class="timeline-item">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-family: 'JetBrains Mono'; font-weight: bold; color: var(--primary); font-size: 14px;">${ev.start} - ${ev.end}</span>
+                        <span style="font-size: 10px; font-weight: 900; text-transform: uppercase; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; color: var(--text-dim);">${ev.type}</span>
+                    </div>
+                    <div style="font-weight: bold; font-size: 17px; color: white; margin-bottom: 12px;">${ev.name}</div>
+                    <div style="display: flex; gap: 16px; font-size: 12px; color: var(--text-dim);">
+                        <span style="display: flex; align-items: center; gap: 6px;"><i class="material-icons" style="font-size: 16px; color: var(--primary);">person</i>${ev.teacher}</span>
+                        <span style="display: flex; align-items: center; gap: 6px;"><i class="material-icons" style="font-size: 16px; color: var(--primary);">place</i>${ev.room}</span>
+                    </div>
+                </div>`;
+        });
+        document.getElementById('timeline-slot').innerHTML = html + "</div>";
+    }
+
     function updateApp() {
         const now = new Date();
         const curDay = now.getDay();
+        const currentMin = now.getHours() * 60 + now.getMinutes();
+        
         document.getElementById('live-clock').innerText = now.toLocaleTimeString('ka-GE', {hour12: false});
 
         if (lastRenderedDay !== curDay) {
-            const today = schedule.filter(e => e.day === curDay).sort((a,b) => a.start.localeCompare(b.start));
-            const carousel = document.getElementById('today-carousel');
-            const gapsSlot = document.getElementById('gaps-slot');
-            const toggleBtn = document.getElementById('breaks-toggle');
-            
-            if (today.length > 0) {
-                carousel.innerHTML = today.map(ev => `
-                    <div class="today-card" data-start="${ev.start}" data-end="${ev.end}">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-                            <span style="font-family: monospace; font-size: 12px; font-weight: bold; color: var(--primary);">${ev.start} - ${ev.end}</span>
-                            <span class="status-indicator" style="font-size: 10px; font-weight: 900; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; background: rgba(255,255,255,0.05); color: var(--text-sub);">შემდეგი</span>
-                        </div>
-                        <div style="font-weight: bold; font-size: 16px; color: white; margin-bottom: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${ev.name}</div>
-                        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-dim);">
-                            <i class="material-icons" style="font-size: 14px; color: var(--primary);">place</i>
-                            <span>${ev.room.split(' / ')[1] || ev.room}</span>
-                        </div>
-                    </div>
-                `).join('');
-
-                let gapsHTML = "";
-                for (let i = 0; i < today.length - 1; i++) {
-                    const gap = timeToMin(today[i+1].start) - timeToMin(today[i].end);
-                    if (gap >= 10) {
-                        gapsHTML += `
-                            <div class="gap-item">
-                                <div style="display: flex; align-items: center; gap: 12px; color: var(--text-dim);">
-                                    <i class="material-icons" style="color: var(--primary);">timer</i> 
-                                    <span>${today[i].name}-ს შემდეგ</span>
-                                </div>
-                                <div style="font-family: monospace; font-weight: bold; color: var(--primary); font-size: 16px;">${formatTimeRemaining(gap)}</div>
-                            </div>`;
-                    }
-                }
-                toggleBtn.style.display = gapsHTML ? "flex" : "none";
-                gapsSlot.innerHTML = gapsHTML;
-            }
+            renderToday(curDay);
+            renderTimeline();
             lastRenderedDay = curDay;
         }
 
+        // Update Today Cards Status
         document.querySelectorAll('.today-card').forEach(card => {
             const start = timeToMin(card.dataset.start);
             const end = timeToMin(card.dataset.end);
-            const current = now.getHours() * 60 + now.getMinutes();
             const indicator = card.querySelector('.status-indicator');
 
-            if (current >= start && current < end) {
+            if (currentMin >= start && currentMin < end) {
                 card.style.borderColor = "var(--emerald)";
-                card.style.background = "rgba(16, 185, 129, 0.05)";
+                card.style.background = "rgba(16, 185, 129, 0.08)";
                 indicator.innerText = "LIVE";
                 indicator.style.background = "var(--emerald)";
                 indicator.style.color = "white";
-            } else if (current > end) {
-                card.style.opacity = "0.5";
+            } else if (currentMin >= end) {
+                card.style.opacity = "0.4";
                 indicator.innerText = "დასრულდა";
+                indicator.style.background = "transparent";
             }
         });
 
-        let nextEv = null;
-        let allUpcoming = [];
-        schedule.forEach(ev => {
-            const [hS, mS] = ev.start.split(':').map(Number);
-            const [hE, mE] = ev.end.split(':').map(Number);
-            let tS = new Date(now); let tE = new Date(now);
-            let dDiff = ev.day - curDay;
-            if (dDiff < 0 || (dDiff === 0 && (now.getHours() > hE || (now.getHours() === hE && now.getMinutes() >= mE)))) dDiff += 7;
-            tS.setDate(now.getDate() + dDiff); tS.setHours(hS, mS, 0, 0);
-            tE.setDate(now.getDate() + dDiff); tE.setHours(hE, mE, 0, 0);
+        // Priority Logic
+        let priorityEv = null;
+        let upcoming = [];
 
-            if (now >= tS && now < tE) { nextEv = { ...ev, targetDate: tS, isLive: true }; }
-            else if (now < tS) { allUpcoming.push({ ...ev, targetDate: tS, isLive: false }); }
+        schedule.forEach(ev => {
+            let dDiff = ev.day - curDay;
+            if (dDiff < 0 || (dDiff === 0 && currentMin >= timeToMin(ev.end))) dDiff += 7;
+            
+            const targetDate = new Date(now);
+            targetDate.setDate(now.getDate() + dDiff);
+            const [h, m] = ev.start.split(':');
+            targetDate.setHours(h, m, 0, 0);
+
+            const endDateTime = new Date(targetDate);
+            const [eh, em] = ev.end.split(':');
+            endDateTime.setHours(eh, em, 0, 0);
+
+            if (now >= targetDate && now < endDateTime) {
+                priorityEv = { ...ev, isLive: true };
+            } else if (now < targetDate) {
+                upcoming.push({ ...ev, targetDate, isLive: false });
+            }
         });
 
-        if (!nextEv && allUpcoming.length > 0) {
-            allUpcoming.sort((a, b) => a.targetDate - b.targetDate);
-            nextEv = allUpcoming[0];
+        if (!priorityEv && upcoming.length > 0) {
+            upcoming.sort((a, b) => a.targetDate - b.targetDate);
+            priorityEv = upcoming[0];
         }
 
-        if (nextEv) {
-            let countdownText = nextEv.isLive ? 'მიმდინარეობს...' : `იწყება ${formatTimeRemaining(Math.floor((nextEv.targetDate - now) / 60000))}-ში`;
+        if (priorityEv) {
+            const countdown = priorityEv.isLive ? "მიმდინარეობს..." : `იწყება ${formatTimeRemaining(Math.floor((priorityEv.targetDate - now) / 60000))}-ში`;
             document.getElementById('priority-slot').innerHTML = `
-                <div class="priority-card ${nextEv.isLive ? 'live' : ''}">
-                    <div class="badge-top ${nextEv.isLive ? 'live' : ''}">${countdownText}</div>
-                    <div style="font-size: 10px; font-weight: 900; text-transform: uppercase; background: rgba(255,255,255,0.05); padding: 4px 12px; border-radius: 6px; color: var(--text-dim); margin-top: 16px; display: inline-block;">${nextEv.type}</div>
-                    <div style="font-size: 24px; font-weight: 900; margin-top: 16px; margin-bottom: 20px; color: white;">${nextEv.name}</div>
-                    <div style="display: grid; gap: 8px;">
-                        <div style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: var(--text-dim);"><i class="material-icons" style="color: var(--primary); font-size: 16px;">event</i><span>${geDays[nextEv.day]} • ${nextEv.start} - ${nextEv.end}</span></div>
-                        <div style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: var(--text-dim);"><i class="material-icons" style="color: var(--primary); font-size: 16px;">meeting_room</i><span>${nextEv.room}</span></div>
+                <div class="priority-card ${priorityEv.isLive ? 'live' : ''}">
+                    <div class="badge-top ${priorityEv.isLive ? 'live' : ''}">${countdown}</div>
+                    <div style="font-size: 10px; font-weight: 900; text-transform: uppercase; background: rgba(255,255,255,0.05); padding: 4px 12px; border-radius: 6px; color: var(--text-dim); margin-top: 16px; display: inline-block;">${priorityEv.type}</div>
+                    <div style="font-size: 22px; font-weight: 900; margin-top: 16px; margin-bottom: 20px; color: white; line-height: 1.3;">${priorityEv.name}</div>
+                    <div style="display: grid; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: var(--text-dim);"><i class="material-icons" style="color: var(--primary); font-size: 18px;">event</i><span>${geDays[priorityEv.day]} • ${priorityEv.start} - ${priorityEv.end}</span></div>
+                        <div style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: var(--text-dim);"><i class="material-icons" style="color: var(--primary); font-size: 18px;">meeting_room</i><span>${priorityEv.room}</span></div>
                     </div>
                 </div>`;
         }
-
-        if (!document.getElementById('timeline-slot').hasChildNodes()) {
-            let html = ""; let cDay = -1;
-            [...schedule].sort((a,b) => a.day !== b.day ? a.day - b.day : timeToMin(a.start) - timeToMin(b.start)).forEach(ev => {
-                if (ev.day !== cDay) {
-                    if (cDay !== -1) html += `</div>`;
-                    html += `<div class="day-divider">${geDays[ev.day]}</div><div>`;
-                    cDay = ev.day;
-                }
-                html += `
-                    <div class="timeline-item">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <span style="font-family: monospace; font-weight: bold; color: var(--primary); font-size: 14px;">${ev.start} - ${ev.end}</span>
-                            <span style="font-size: 10px; font-weight: 900; text-transform: uppercase; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; color: var(--text-dim);">${ev.type}</span>
-                        </div>
-                        <div style="font-weight: bold; font-size: 18px; color: white; margin-bottom: 12px;">${ev.name}</div>
-                        <div style="display: flex; gap: 16px; font-size: 12px; color: var(--text-dim);">
-                            <span style="display: flex; align-items: center; gap: 4px;"><i class="material-icons" style="font-size: 14px; color: var(--primary);">person</i>${ev.teacher.split(' ')[0]}</span>
-                            <span style="display: flex; align-items: center; gap: 4px;"><i class="material-icons" style="font-size: 14px; color: var(--primary);">place</i>${ev.room.split(' / ')[1]}</span>
-                        </div>
-                    </div>`;
-            });
-            document.getElementById('timeline-slot').innerHTML = html + "</div>";
-        }
     }
 
+    // Event Listeners
     document.getElementById('breaks-toggle').onclick = function() {
         const drawer = document.getElementById('gaps-drawer');
         const icon = this.querySelector('i');
-        drawer.classList.toggle('open');
-        icon.style.transform = drawer.classList.contains('open') ? 'rotate(180deg)' : 'rotate(0deg)';
+        const isOpen = drawer.classList.toggle('open');
+        icon.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
     };
 
-    // --- PWA SERVICE WORKER REGISTRATION ---
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js')
-                .then(reg => console.log('SW Registered'))
-                .catch(err => console.error('SW Registration Failed', err));
+            navigator.serviceWorker.register('./sw.js').catch(err => console.log(err));
         });
     }
 
     updateApp();
-    setInterval(updateApp, 60000);
+    setInterval(updateApp, 30000); // 30 წამში ერთხელ განახლება
 </script>
 </body>
 </html>
+
